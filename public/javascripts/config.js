@@ -4,7 +4,7 @@
 
 //Configurable Global Values
 const w=1200;
-const amountOfLinearSquares = 5;
+const amountOfLinearSquares = 8;
 const strokeWidth = 4;
 let nextConnectionNumber = 1000;
 let debug = false;
