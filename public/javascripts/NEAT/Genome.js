@@ -80,6 +80,8 @@ class Genome {
         this.connectNodes();
         this.network = [];
 
+        let nodesPerLayer = [];
+
         for (let i = 0; i < this.layers; i++) {
             let layerNodes = [];
             this.nodes.forEach((val) => {
@@ -92,7 +94,10 @@ class Genome {
             layerNodes.forEach((val, index) => {
                 val.pos = [x, (w / 2) + (((3 * squareSizeOver8) / 4) * (index - ((layerNodes.length - 1) / 2)))];
             });
+            nodesPerLayer.push(layerNodes.length);
         }
+
+        return nodesPerLayer;
     }
 
     innovateAndConnect(innovationHistory, from, to, weight) {
@@ -306,6 +311,45 @@ class Genome {
 
             val.draw(ctx);
         });
+    }
+
+    compileToMatrixModel() {
+        // let nodesPerLayer =
+        this.generateNetworkAndPositions();
+
+        let finalModel = [];
+
+        this.network.forEach((node, index) => {
+            node.outputConnections.forEach((connection) => {
+                finalModel.push([index, this.network.indexOf(connection.toNode), connection.weight]);
+            });
+        });
+
+        return finalModel;
+        //
+        // let matrices = [];
+        //
+        // for (let k = 0; k < this.layers; k++) {
+        //     let matrix = [];
+        //     for (let i = 0; i < nodesPerLayer[k+1]; i++) {
+        //         if (!matrix[i]) matrix.push([]);
+        //         for (let j = 0; j < nodesPerLayer[k]; j++) {
+        //             let previousNodes = 0;
+        //             for (let k2 = 0; k2 < k; k2++) previousNodes += nodesPerLayer[k2];
+        //             let outputs = this.network[previousNodes + j].outputConnections;
+        //             outputs.forEach((output) => {
+        //                 if (output.toNode.id === this.network[previousNodes + nodesPerLayer[k+1] + i].id) {
+        //                     matrix[i].push(output.weight);
+        //                     return;
+        //                 }
+        //             });
+        //             if (!matrix[i][j]) matrix[i].push(null);
+        //
+        //         }
+        //     }
+        //     matrices.push(matrix);
+        // }
+        // return matrices;
     }
 }
 
