@@ -1,8 +1,10 @@
 import Genome from "./NEAT/Genome.js";
 
 class Snake {
-    constructor(small = false, appleColor='#F00', snakeColor="#0F0", name, pos=[5,5], length=0, applePos=[1,1], direction=-2) {
-        this.genome = new Genome(inputs,outputs);
+    constructor(small = false, appleColor='#F00', snakeColor="#0F0", name, pos=[5,5], length=0, applePos=[1,1], direction=-2, inputs, outputs, pathfinding=false) {
+        this.model =
+        this.genome = new Genome(inputs || surviveInputs, outputs || surviveOutputs);
+        this.pathfinding = pathfinding;
 
         this.pos = (pos[0] < amountOfLinearSquares) ? pos : [3,3];
         this.length = length;
@@ -69,41 +71,24 @@ class Snake {
     }
 
     look() {
-        // Player Head Position
-        this.vision[0] = this.pos[0]+1;
-        this.vision[1] = this.pos[1]+1;
+        if (this.pathfinding) {
+            // Apple Position - Player Head Position / amountOfLinearSquares
+            this.vision[0] = this.applePos[0] - this.pos[0] / amountOfLinearSquares;
+            this.vision[1] = this.applePos[1] - this.pos[1] / amountOfLinearSquares;
 
-        // Apple Position
-        this.vision[2] = this.applePos[0]+1;
-        this.vision[3] = this.applePos[1]+1;
+            // Direction
+            this.vision[2] = (Math.abs(this.direction) === 1) ? this.direction : 0;
+            this.vision[3] = (Math.abs(this.direction) === 2) ? this.direction / 2 : 0;
+        } else {
+            let topRightBottomLeft = [0,0,0,0];
+            this.body.forEach((bodyPart) => {
+                if (this.pos[1] === 0 || bodyPart[1] === this.pos[1]-1) topRightBottomLeft[0] = 1;
+                if (this.pos[0] === amountOfLinearSquares-1 || bodyPart[0] === this.pos[0]+1) topRightBottomLeft[0] = 1;
+                if (this.pos[1] === 0 || bodyPart[1] === this.pos[1]-1) topRightBottomLeft[0] = 1;
+                if (this.pos[0] === amountOfLinearSquares-1 || bodyPart[0] === this.pos[0]+1) topRightBottomLeft[0] = 1;
+            });
 
-        // Apple Position - Player Head Position
-        this.vision[4] = this.applePos[0] - this.pos[0];
-        this.vision[5] = this.applePos[1] - this.pos[1];
-
-        // Length
-        this.vision[6] = this.length+1;
-
-        // Direction
-        this.vision[7] = (Math.abs(this.direction) === 1) ? this.direction : 0;
-        this.vision[8] = (Math.abs(this.direction) === 2) ? this.direction / 2 : 0;
-
-        // Are there body parts in my way? (x, y)
-        this.vision[9] = 0;
-
-        let tmpX = (this.vision[0] < this.vision[2]) ? [this.vision[0],this.vision[2]] : [this.vision[2],this.vision[0]];
-        let tmpY = (this.vision[1] < this.vision[3]) ? [this.vision[1],this.vision[3]] : [this.vision[1],this.vision[3]];
-
-        if (this.body.length > 0) this.body.forEach((val) => {
-            if (tmpX[0] <= val[0] && val[0] <= tmpX[1] && tmpY[0] <= val[1] && val[1] <= tmpY[1]) this.vision[8]+=2;
-        });
-
-        // for (let i = 0; i < amountOfLinearSquares; i++) for (let j = 0; j < amountOfLinearSquares; j++) this.vision[i][j] = 0;
-        // this.vision[this.pos[1]][this.pos[0]] = headWorth;
-        // if (this.body.length > 0) this.body.forEach((val) => {
-        //     this.vision[val[1]][val[0]] = bodyWorth;
-        // });
-        // this.vision[this.applePos[1]][this.applePos[0]] = appleWorth;
+        }
 
         return this.vision.slice();
     }

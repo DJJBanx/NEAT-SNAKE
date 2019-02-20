@@ -9,6 +9,7 @@ const strokeWidth = 4;
 let nextConnectionNumber = 1000;
 let debug = false;
 
+let globalAccessorBestPathfindingBrain = null;
 let globalAccessorPlayers = 'GAP: String to acknowledge this exists';
 let globalAccessorHallOfFame = 'GAHOF: String to acknowledge this exists';
 
@@ -25,8 +26,12 @@ const massExtinctionConfig = 5;
 // const appleWorth = 0;
 // const bodyWorth = -1;
 // const headWorth = 5;
-const inputs = 10;
-const outputs = 4;
+const pathInputs = 4;
+const pathOutputs = 3;
+const surviveInputs = 4;
+const surviveOutputs = 3;
+
+
 const IONames = ['Player X', 'Player Y', 'Apple X', 'Apple Y', 'Distance to Apple X', 'Distance to Apple Y', 'Length', 'Direction X', 'Direction Y', 'Body Parts in way',
                  'Up', 'Right', 'Down', 'Left',
                  'Bias Node'];
