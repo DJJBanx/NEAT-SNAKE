@@ -24,7 +24,7 @@ class Population {
             let popSection = [];
             for (let j = 0; j < size; j++) {
                 let randomInfo = randomPosInfo();
-                let tmpPlayer = new Snake(Math.random() <= 0.5, getRandomColor(), getRandomColor(), randomName(), randomInfo[0], 0, randomInfo[1], randomInfo[2]);
+                let tmpPlayer = new Snake(Math.random() <= 0.5, getRandomColor(), getRandomColor(), randomName(), randomInfo[0], 0, randomInfo[1], randomInfo[2], surviveInputs, surviveOutputs, surviveOrPathfind);
                 tmpPlayer.genome.mutate(this.innovationHistory);
                 popSection.push(tmpPlayer);
             }

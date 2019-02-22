@@ -10,7 +10,7 @@ class Node {
     }
 
     engage() {
-        if (this.layer !== 0) this.outputSum = Node.sigmoid(this.inputSum);
+        if (this.layer !== 0) this.outputSum = Math.tanh(this.inputSum);
         this.active = this.outputSum !== 0;
         this.outputConnections.forEach((val) => {
             if (val.enabled) val.toNode.inputSum += this.outputSum * val.weight;

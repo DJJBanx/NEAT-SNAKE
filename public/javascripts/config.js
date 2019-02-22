@@ -9,7 +9,8 @@ const strokeWidth = 4;
 let nextConnectionNumber = 1000;
 let debug = false;
 
-let globalAccessorBestPathfindingBrain = null;
+const surviveOrPathfind = true;
+const bestPathfindingBrain = [[0,5,0.8518220491764472],[1,6,0.5991215048228515],[1,5,0.32740373951950563],[3,5,-0.0026339383729878287],[4,5,-0.9463482255549144],[5,6,0.4976263111438737]];
 let globalAccessorPlayers = 'GAP: String to acknowledge this exists';
 let globalAccessorHallOfFame = 'GAHOF: String to acknowledge this exists';
 
@@ -17,7 +18,7 @@ let globalAccessorHallOfFame = 'GAHOF: String to acknowledge this exists';
 const excessCoeff = 1.5;
 const weightDiffCoeff = 1;
 const compatibilityThreshold = 3;
-const largeGeneNormalizer = 20; // Idk what this is or why it exists
+const largeGeneNormalizer = 10; // Idk what this is or why it exists
 
 //Population Globals
 const massExtinctionConfig = 5;
@@ -27,9 +28,9 @@ const massExtinctionConfig = 5;
 // const bodyWorth = -1;
 // const headWorth = 5;
 const pathInputs = 4;
-const pathOutputs = 3;
+const pathOutputs = 1;
 const surviveInputs = 4;
-const surviveOutputs = 3;
+const surviveOutputs = 1;
 
 
 const IONames = ['Player X', 'Player Y', 'Apple X', 'Apple Y', 'Distance to Apple X', 'Distance to Apple Y', 'Length', 'Direction X', 'Direction Y', 'Body Parts in way',
@@ -56,6 +57,27 @@ let win = false;
 //////////////////////////////
 //////GLOBAL FUNCTIONS////////
 //////////////////////////////
+
+function runSpecialModel(inputs) {
+    return runModel(bestPathfindingBrain, inputs, pathOutputs)
+}
+
+function runModel(model, inputs, outputLength) {
+    inputs[inputs.length] = 1;
+    let latestNodeActivated = inputs.length;
+
+    model.forEach((connection, index, model) => {
+        if (!inputs[connection[1]]) inputs[connection[1]] = 0;
+        if (connection[0] >= latestNodeActivated) {
+            inputs[connection[0]] = Math.tanh(inputs[connection[0]]);
+            latestNodeActivated++;
+        }
+        inputs[connection[1]] += inputs[connection[0]] * connection[2];
+    });
+
+    for (let i = inputs.length-1; i >= inputs.length-outputLength; i--) inputs[i] = Math.tanh(inputs[i]);
+    return inputs.slice(inputs.length-outputLength, inputs.length);
+}
 
 function comparePos(x,y) {
     return x[0] === y[0] && x[1] === y[1];

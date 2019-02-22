@@ -1,12 +1,11 @@
 import Genome from "./NEAT/Genome.js";
 
 class Snake {
-    constructor(small = false, appleColor='#F00', snakeColor="#0F0", name, pos=[5,5], length=0, applePos=[1,1], direction=-2, inputs, outputs, pathfinding=false) {
-        this.model =
-        this.genome = new Genome(inputs || surviveInputs, outputs || surviveOutputs);
-        this.pathfinding = pathfinding;
+    constructor(small = false, appleColor = '#F00', snakeColor = "#0F0", name, pos = [5, 5], length = 0, applePos = [1, 1], direction = -2, inputs, outputs, useModel=false) {
+        this.useModel = useModel;
+        this.genome = new Genome(inputs || pathInputs, outputs || pathOutputs);
 
-        this.pos = (pos[0] < amountOfLinearSquares) ? pos : [3,3];
+        this.pos = (pos[0] < amountOfLinearSquares) ? pos : [3, 3];
         this.length = length;
         this.body = [];
         this.applePos = applePos;
@@ -17,7 +16,7 @@ class Snake {
         this.memoryBank = [];
         this.memory = -2;
         this.appleMemory = 0;
-        this.appleMemoryBank=[];
+        this.appleMemoryBank = [];
 
         this.appleColor = appleColor;
         this.snakeColor = snakeColor;
@@ -33,7 +32,7 @@ class Snake {
         // for (let i = 0; i < inputs; i++) for (let j = 0; j < amountOfLinearSquares; j++) {
         //     this.vision[i] = 0;
         // }
-        this.decision = [0,0,0,0];
+        this.decision = [0, 0, 0, 0];
     }
 
     get direction() {
@@ -50,7 +49,7 @@ class Snake {
         this.applePos[0] = Math.floor(Math.random() * Math.floor(amountOfLinearSquares));
         this.applePos[1] = Math.floor(Math.random() * Math.floor(amountOfLinearSquares));
 
-        if (this.body.length >= amountOfLinearSquares**2 - 1) {
+        if (this.body.length >= amountOfLinearSquares ** 2 - 1) {
             this.score += 100;
             this.die();
             return;
@@ -60,7 +59,7 @@ class Snake {
         } else if (this.body.length > 1) {
             this.body.forEach((val) => {
                 if (comparePos(val, this.applePos)) {
-                   this.randomApple();
+                    this.randomApple();
                 }
             });
         } else if (this.body.length === 1) {
@@ -71,41 +70,65 @@ class Snake {
     }
 
     look() {
-        if (this.pathfinding) {
-            // Apple Position - Player Head Position / amountOfLinearSquares
-            this.vision[0] = this.applePos[0] - this.pos[0] / amountOfLinearSquares;
-            this.vision[1] = this.applePos[1] - this.pos[1] / amountOfLinearSquares;
+        // Apple Position - Player Head Position / amountOfLinearSquares
 
-            // Direction
-            this.vision[2] = (Math.abs(this.direction) === 1) ? this.direction : 0;
-            this.vision[3] = (Math.abs(this.direction) === 2) ? this.direction / 2 : 0;
-        } else {
-            let topRightBottomLeft = [0,0,0,0];
+        // this.vision[0] = (this.applePos[0] - this.pos[0]) / amountOfLinearSquares;
+        // this.vision[1] = (this.applePos[1] - this.pos[1]) / amountOfLinearSquares;
+
+        // Direction
+        this.vision[2] = (Math.abs(this.direction) === 1) ? this.direction : 0;
+        this.vision[3] = (Math.abs(this.direction) === 2) ? this.direction / 2 : 0;
+
+        this.vision[0] = ((this.applePos[0] - this.pos[0]) / amountOfLinearSquares) * this.vision[2];
+        this.vision[1] = ((this.applePos[1] - this.pos[1]) / amountOfLinearSquares) * this.vision[3];
+
+        if (this.useModel) {
+            let startingLeftToRight = 0;
+            if (this.vision[2] !== 0) startingLeftToRight = (this.vision[2] > 0) ? 0 : 2;
+            else startingLeftToRight = (this.vision[3] > 0) ? 1 : 3;
+
+            let topRightBottomLeft = [0, 0, 0, 0];
+
+            if (this.pos[0] === 0) topRightBottomLeft[3] = 1;
+            if (this.pos[0] === amountOfLinearSquares - 1) topRightBottomLeft[1] = 1;
+            if (this.pos[1] === 0) topRightBottomLeft[0] = 1;
+            if (this.pos[1] === amountOfLinearSquares - 1) topRightBottomLeft[2] = 1;
+
             this.body.forEach((bodyPart) => {
-                if (this.pos[1] === 0 || bodyPart[1] === this.pos[1]-1) topRightBottomLeft[0] = 1;
-                if (this.pos[0] === amountOfLinearSquares-1 || bodyPart[0] === this.pos[0]+1) topRightBottomLeft[0] = 1;
-                if (this.pos[1] === 0 || bodyPart[1] === this.pos[1]-1) topRightBottomLeft[0] = 1;
-                if (this.pos[0] === amountOfLinearSquares-1 || bodyPart[0] === this.pos[0]+1) topRightBottomLeft[0] = 1;
+                if (bodyPart[1] === this.pos[1]) {
+                    if (bodyPart[0] === this.pos[0] - 1) topRightBottomLeft[3] = 1;
+                    if (bodyPart[0] === this.pos[0] + 1) topRightBottomLeft[1] = 1;
+                }
+                if (bodyPart[0] === this.pos[0]) {
+                    if (bodyPart[1] === this.pos[1] + 1) topRightBottomLeft[2] = 1;
+                    if (bodyPart[1] === this.pos[1] - 1) topRightBottomLeft[0] = 1;
+                }
             });
 
-        }
+            topRightBottomLeft = topRightBottomLeft.concat(topRightBottomLeft);
 
+            this.vision[3] = runSpecialModel(this.vision.slice())[0];
+            this.vision[0] = topRightBottomLeft[startingLeftToRight++];
+            this.vision[1] = topRightBottomLeft[startingLeftToRight++];
+            this.vision[2] = topRightBottomLeft[startingLeftToRight];
+        }
+        // this.vision[4] = this.lastThoughtDirection;
         return this.vision.slice();
     }
 
     think() {
+        let middlePoint = 0;
+        if (this.lastThoughtDirection%2 === 0) middlePoint = (this.lastThoughtDirection > 0) ? 2 : 4;
+        else middlePoint = (this.lastThoughtDirection > 0) ? 1 : 3;
+
+        // -1 -> -0.33 -> 0.33 -> 1
         this.decision = this.genome.feedForward(this.vision);
-
         // let dec = [[-2, 1, 2, -1],['up', 'right', 'down', 'left']];
-        let dec = [[-2,'Up'],[1,'Right'],[2,'Down'],[-1,'Left']];
+        let dec = [-2,1,2,-1,-2,1];
 
-        for (let i = 0; i < this.decision.length; i++) { // noinspection JSValidateTypes
-            dec[i] = [dec[i][0], this.decision[i], dec[i][1]];
-        }
-        dec.sort((a,b) => {
-            return (a[1] > b[1]) ? -1 : 1;
-        });
-        this.direction = (this.lastThoughtDirection !== -dec[0][0]) ? dec[0][0] : dec[1][0];
+        middlePoint += (this.decision < -0.33) ? -1 : (this.decision > 0.33) ? 1 : 0;
+
+        this.direction = dec[middlePoint];
 
         if (this.memory >= 0) this.direction = this.memoryBank[this.memory];
         else this.memoryBank.push(this.direction);
@@ -114,23 +137,17 @@ class Snake {
 
         if (this.memory >= 0) this.memory++;
 
-        let string = 'Picks in order: ';
-
-        dec.forEach((val, index) => {
-            string += `#${index+1}: ${val[2]} (${val[1]}) `;
-        });
-
-        return string;
+        return this.decision;
     }
 
     move() {
         if (this.length > 0) {
-            for (let i=this.length-1;i>0;i--) if (this.body[i-1]) this.body[i] = this.body[i-1].slice();
+            for (let i = this.length - 1; i > 0; i--) if (this.body[i - 1]) this.body[i] = this.body[i - 1].slice();
             this.body[0] = this.pos.slice();
         }
 
-        if (this.direction%2 !== 0) this.pos[0] += this.direction;
-        else this.pos[1] += this.direction/2;
+        if (this.direction % 2 !== 0) this.pos[0] += this.direction;
+        else this.pos[1] += this.direction / 2;
 
         if ((this.pos[1] < 0) || (this.pos[1] >= amountOfLinearSquares) || (this.pos[0] < 0) || (this.pos[0] >= amountOfLinearSquares)) this.die();
 
@@ -139,7 +156,7 @@ class Snake {
         });
 
         if (comparePos(this.applePos, this.pos)) {
-            this.length++;
+            if (this.useModel) this.length++;
             if (this.memory < 0) this.score += 5;
             this.lastAppleMove = this.moves;
             if (this.memory < -1) {
@@ -152,7 +169,7 @@ class Snake {
         }
 
         if (!this.dead) this.moves++;
-        if (this.moves-this.lastAppleMove > (amountOfLinearSquares**2) - 1) this.die();
+        if (this.moves - this.lastAppleMove > (amountOfLinearSquares ** 2) - 1) this.die();
     }
 
     updateForHOF() {
@@ -195,6 +212,7 @@ class Snake {
         babySnake.snakeColor = addColors(this.snakeColor, snake2.snakeColor);
         babySnake.appleColor = addColors(this.appleColor, snake2.appleColor);
         babySnake.small = (Math.random() > 0.5) ? this.small : snake2.small;
+        babySnake.useModel = this.useModel;
         return babySnake;
     }
 
@@ -206,7 +224,7 @@ class Snake {
         //small = false, appleColor='#F00', snakeColor="#0F0", name, pos=[5,5], length=0, applePos=[1,1], direction=-2
         //this.startingMemory = [this.pos.slice(), applePos.slice(), direction, length];
         let randomInfo = randomPosInfo();
-        let tmp = new Snake(this.small, this.appleColor, this.snakeColor, this.name, randomInfo[0], this.startingMemory[3], randomInfo[1], randomInfo[2]);
+        let tmp = new Snake(this.small, this.appleColor, this.snakeColor, this.name, randomInfo[0], this.startingMemory[3], randomInfo[1], randomInfo[2], this.genome.inputs, this.genome.outputs, this.useModel);
         tmp.genome = this.genome.clone();
 
         if (isChild) {
@@ -222,7 +240,7 @@ class Snake {
     }
 
     cloneForHallOfFame() {
-        let tmp = new Snake(this.small, this.appleColor, this.snakeColor, this.name, this.startingMemory[0].slice(), this.startingMemory[3], this.startingMemory[1].slice(), this.startingMemory[2]);
+        let tmp = new Snake(this.small, this.appleColor, this.snakeColor, this.name, this.startingMemory[0].slice(), this.startingMemory[3], this.startingMemory[1].slice(), this.startingMemory[2], this.genome.inputs, this.genome.outputs, this.useModel);
         tmp.genome = this.genome.clone();
         tmp.memory = this.memory;
         tmp.memoryBank = this.memoryBank.slice();
